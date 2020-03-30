@@ -74,8 +74,7 @@ class Analex():
                     y += 1
                     
 
-            linhaAtual += 1        
-            print('-------------------------------') 
+            linhaAtual += 1
 
         
         arquivoAux.close()
