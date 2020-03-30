@@ -1,0 +1,64 @@
+structs{
+    struct pessoa{
+        string nome;
+        int idade;
+    };
+
+    struct funcionario extends struct pessoa{
+        real valor;
+    };
+
+}
+
+typedefs{
+    typedef struct funcionario func;
+    typedef struct pessoa p;
+}
+
+const{
+    real base_calculo = 0.2;
+}
+
+var{
+    int n;
+    string codigo[];
+    boolean b = false;
+    real mille;
+    string cidade;
+}
+
+functions{
+    function real calcula_extra(real salario){
+        var{
+            int a[][];
+            p pessoa;
+        }
+       
+        return global.mille;
+    }
+    function int calcula_extra(real salario, int codigo){
+        var{
+            int a;
+        }
+        return local.a;
+    }
+}
+
+procedures{
+    procedure calcula_extra(string cidade){
+        var{
+            string estado;
+        }
+    }
+}
+
+start(){
+    var{
+        int numero;
+        p pessoa;
+        boolean codigo;
+        real r;
+    }
+    calcula_extra(local.r);
+    local.numero++;
+}
