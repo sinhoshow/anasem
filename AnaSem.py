@@ -1,6 +1,7 @@
 import sys
 import os.path
 import string
+from AnaLex import Analex
 from Models import *
 
 class AnaSem():
@@ -12,14 +13,13 @@ class AnaSem():
     typedefs = []
 
     def analisa(self):
+        erros = []
+        analex = Analex()
         arquivos = os.listdir('input')        
-        for arquivo in arquivos:
-            arquivo = open('input/' + arquivo, 'r')
-            erros = []
-            #processar codigo
-
-
-            arquivo.close()
+        for nome_arquivo in arquivos:
+            elementos = analex.analisa(nome_arquivo)
+            for elemento in elementos:
+                print(elemento.lexema)
             conteudo = ''            
             if (erros):
                 conteudo += '\n\n\nErros: \n\n'
@@ -28,7 +28,12 @@ class AnaSem():
             else:
                 conteudo += "SUCESSO! sem erros"
             
-            saida = open('output/' + arquivo, 'w')
+            saida = open('output/' + nome_arquivo, 'w')
             saida.write(conteudo)
             saida.close()
-            
+
+
+
+
+analisador_semantico = AnaSem()
+analisador_semantico.analisa()
