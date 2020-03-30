@@ -1,0 +1,10 @@
+structs{
+    struct pessoa{
+        string nome;
+        int idade;
+    };
+
+    struct funcionario extends struct pessoa{
+        real valor;
+    };
+
