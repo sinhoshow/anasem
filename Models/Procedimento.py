@@ -2,11 +2,9 @@ import sys
 import os.path
 import string
 
-class Erro():
-    def __init__(self,tipo,nome,parametros,linha):
-    	self.tipo = tipo
+class Procedimento():
+    def __init__(self,nome,parametros,linha):
         self.nome = nome
-        self.parametros = parametros
         self.linha = linha
         self.variaveis = []
 
