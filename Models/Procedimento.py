@@ -11,5 +11,5 @@ class Procedimento():
 
 
     def __str__(self):
-        return self.linha + ' || ' + 'Metodo: ' + self.tipo + ' ' + self.nome   
+        return self.linha + ' || ' + 'Procedimento: ' + self.nome
         
