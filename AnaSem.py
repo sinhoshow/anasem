@@ -10,7 +10,7 @@ from Models.Funcao import Funcao
 from Models.Estrutura import Estrutura 
 
 class AnaSem():
-    metodos = []
+    funcoes = []
     procedimentos = []
     constantes = []
     variaveis = []
@@ -92,43 +92,28 @@ class AnaSem():
             if elemento == "typedef":
                 linha = '1'
                 td = Typedef(group[i+2], group[i+3], linha)
-                self.typedefs.append(td) 
+                self.typedefs.append(td)
+
     def preencher_funcoes(self, group):
         indexes_functions = [i for i, e in enumerate(group) if e == 'function']
         for i, indice in enumerate(indexes_functions):
             variaveis = []
-            content_function = self.find_bracket_groups(group)[0]
+            params = []
+            params = self.get_params_functions(group, indice)
+            content_function = self.find_bracket_groups(group)[i]
             content_var = self.find_bracket_groups(content_function)[0]
-            print('variavel metodo: ' + content_var)
-            variaveis_aux = self.split_lists(content_var, ';')
-            for variavel in variaveis_aux:
-                variaveis.append(Variavel(variavel[0], variavel[1], self.linha))
-            #self.metodos.append(Funcao(group[indice+1], group[indice+2]))
-            
+            variaveis = self.get_variaveis(content_var)
+            self.funcoes.append(Funcao(group[indice+1], group[indice+2], params, variaveis, self.linha)) 
+
     def preencher_constantes(self, group):
-        for i in range(0,len(group),5):
-            linha = "1"
-            constante = Variavel(group[i], group[i+1], linha)
+        self.constantes = self.get_variaveis(group)
 
     def preencher_variaveis_globais(self, group):
         linha = '1'
         tipo = ''
-        print('variavel global: ' + group)
-        if(len(group)!=0):
-            for i, elemento in enumerate(group):
-                if i==0:
-                    tipo = group[i]
-                    var = Variavel(group[i], group[i+1], linha)
-                    self.variaveis.append(var)
-                elif elemento == ",":
-                    var = Variavel(tipo, group[i+1], linha)
-                    self.variaveis.append(var)
-                elif elemento == ";" and i+1 != len(group):
-                    tipo = group[i+1]
-                    var = Variavel(tipo, group[i+2], linha)
-                    self.variaveis.append(var)
+        self.variaveis = self.get_variaveis(group)
     def preencher_procedimentos(self, group):
-        print(group)
+        return
     def preencher_start(self, group):
         return
 
@@ -146,6 +131,40 @@ class AnaSem():
                 continue
 
         return listas
+
+    def get_variaveis(self, content):
+        variaveis = []
+        if(len(content)!=0):
+            for i, elemento in enumerate(content):
+                if i==0:
+                    tipo = content[i]
+                    var = Variavel(content[i], content[i+1], self.linha)
+                    variaveis.append(var)
+                elif elemento == ",":
+                    var = Variavel(tipo, content[i+1], self.linha)
+                    variaveis.append(var)
+                elif elemento == ";" and i+1 != len(content):
+                    tipo = content[i+1]
+                    var = Variavel(tipo, content[i+2], self.linha)
+                    variaveis.append(var)
+        return variaveis
+
+    def get_params_functions(self, group, indice):
+        open_parenteses = 0
+        group = group[indice:]
+        auxGroup = []
+        for elemento in group:
+            if elemento == "(":
+                open_parenteses += 1
+            if open_parenteses > 0:
+                auxGroup.append(elemento)
+            if elemento == ")":
+                del(auxGroup[0])
+                del(auxGroup[-1])
+                break
+        params = self.get_variaveis(auxGroup)
+        return params
+
 
 
 

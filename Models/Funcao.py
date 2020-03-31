@@ -3,12 +3,12 @@ import os.path
 import string
 
 class Funcao():
-    def __init__(self,tipo,nome,parametros,linha):
+    def __init__(self,tipo,nome,parametros,variaveis,linha,):
         self.tipo = tipo
         self.nome = nome
         self.parametros = parametros
         self.linha = linha
-        self.variaveis = []
+        self.variaveis = variaveis
 
 
     def __str__(self):

@@ -22,12 +22,11 @@ typedefs{
 
 const{
     real base_calculo = 0.2;
-    real pi = 3.14;
 }
 
 var{
-    int n,b,c;
-    string codigo[],palavra;
+    int n;
+    string codigo[];
     boolean b = false;
     real mille;
     string cidade;
@@ -41,6 +40,12 @@ functions{
         }
        
         return global.mille;
+    }
+    function int calcula_extra(real salario, int codigo){
+        var{
+            int a;
+        }
+        return local.a;
     }
 }
 
