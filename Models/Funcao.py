@@ -4,7 +4,7 @@ import string
 
 class Funcao():
     def __init__(self,tipo,nome,parametros,linha):
-    	self.tipo = tipo
+        self.tipo = tipo
         self.nome = nome
         self.parametros = parametros
         self.linha = linha

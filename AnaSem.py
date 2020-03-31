@@ -6,6 +6,7 @@ from Models import *
 from AnaLex import Analex
 from Models.Typedef import Typedef
 from Models.Variavel import Variavel
+from Models.Funcao import Funcao
 from Models.Estrutura import Estrutura 
 
 class AnaSem():
@@ -29,9 +30,9 @@ class AnaSem():
             self.preencher_typedefs(groups[1])
             self.preencher_constantes(groups[2])
             self.preencher_variaveis_globais(groups[3])
-            # self.preencher_funcoes(groups[4])
-            # self.preencher_procedimentos(groups[5])
-            # self.preencher_start(groups[6])
+            self.preencher_funcoes(groups[4])
+            self.preencher_procedimentos(groups[5])
+            self.preencher_start(groups[6])
             conteudo = ''
             if (erros):
                 conteudo += '\n\n\nErros: \n\n'
@@ -72,13 +73,19 @@ class AnaSem():
     
     def preencher_estruturas(self, group):
         indexes_structs = [i for i, e in enumerate(group) if e == 'struct']
+        indexes_extends = [i for i, e in enumerate(group) if e == 'extends']
         contents_structs = self.find_bracket_groups(group)
         for i, indice in enumerate(indexes_structs):
             atributos = []
-            atributosAux = self.split_lists(contents_structs[i], ';')
-            for atributo in atributosAux:
+            atributos_aux = self.split_lists(contents_structs[i], ';')
+            for atributo in atributos_aux:
                 atributos.append(Variavel(atributo[0], atributo[1], self.linha))
             self.estruturas.append(Estrutura(group[indice+1], atributos, self.linha))
+
+        for indice_extends in indexes_extends:
+            for estrutura in self.estruturas:
+                if estrutura.nome == group[indice_extends-1]:
+                    estrutura.extends = group[indice_extends+1]
 
     def preencher_typedefs(self, group):
         for i, elemento in enumerate(group):
@@ -86,7 +93,18 @@ class AnaSem():
                 linha = '1'
                 td = Typedef(group[i+2], group[i+3], linha)
                 self.typedefs.append(td) 
-
+    def preencher_funcoes(self, group):
+        indexes_functions = [i for i, e in enumerate(group) if e == 'function']
+        for i, indice in enumerate(indexes_functions):
+            variaveis = []
+            content_function = self.find_bracket_groups(group)[0]
+            content_var = self.find_bracket_groups(content_function)[0]
+            print('variavel metodo: ' + content_var)
+            variaveis_aux = self.split_lists(content_var, ';')
+            for variavel in variaveis_aux:
+                variaveis.append(Variavel(variavel[0], variavel[1], self.linha))
+            #self.metodos.append(Funcao(group[indice+1], group[indice+2]))
+            
     def preencher_constantes(self, group):
         for i in range(0,len(group),5):
             linha = "1"
@@ -95,6 +113,7 @@ class AnaSem():
     def preencher_variaveis_globais(self, group):
         linha = '1'
         tipo = ''
+        print('variavel global: ' + group)
         if(len(group)!=0):
             for i, elemento in enumerate(group):
                 if i==0:
@@ -108,13 +127,10 @@ class AnaSem():
                     tipo = group[i+1]
                     var = Variavel(tipo, group[i+2], linha)
                     self.variaveis.append(var)
-                    
-    def preencher_funcoes(self, group):
-        print(group)
     def preencher_procedimentos(self, group):
         print(group)
     def preencher_start(self, group):
-        print(group)
+        return
 
     def split_lists(self, lista, spliter):
         indexes_of_spliter = [i for i, e in enumerate(lista) if e == spliter]
