@@ -2,7 +2,7 @@ import sys
 import os.path
 import string
 
-class Erro():
+class Funcao():
     def __init__(self,tipo,nome,parametros,linha):
     	self.tipo = tipo
         self.nome = nome

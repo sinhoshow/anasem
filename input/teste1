@@ -22,11 +22,12 @@ typedefs{
 
 const{
     real base_calculo = 0.2;
+    real pi = 3.14;
 }
 
 var{
-    int n;
-    string codigo[];
+    int n,b,c;
+    string codigo[],palavra;
     boolean b = false;
     real mille;
     string cidade;
