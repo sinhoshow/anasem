@@ -1,10 +1,13 @@
 import sys
 import os.path
 import string
+
+from Models import *
 from AnaLex import Analex
-from Models.Estrutura import Estrutura
+from Models.Typedef import Typedef
 from Models.Variavel import Variavel
-from Models.Metodo import Metodo
+from Models.Funcao import Funcao
+from Models.Estrutura import Estrutura 
 
 class AnaSem():
     metodos = []
@@ -86,10 +89,6 @@ class AnaSem():
 
     def preencher_typedefs(self, group):
         return
-    def preencher_constantes(self, group):
-        return
-    def preencher_variaveis_globais(self, group):
-        return
     def preencher_funcoes(self, group):
         indexes_functions = [i for i, e in enumerate(group) if e == 'function']
         for i, indice in enumerate(indexes_functions):
@@ -102,6 +101,35 @@ class AnaSem():
             #self.metodos.append(Metodo(group[indice+1], group[indice+2]))
     def preencher_procedimos(self, group):
         return
+        for i, elemento in enumerate(group):
+            if elemento == "typedef":
+                linha = '1'
+                td = Typedef(group[i+2], group[i+3], linha)
+                self.typedefs.append(td) 
+
+    def preencher_constantes(self, group):
+        for i in range(0,len(group),5):
+            linha = "1"
+            constante = Variavel(group[i], group[i+1], linha)
+
+    def preencher_variaveis_globais(self, group):
+        linha = '1'
+        tipo = ''
+        if(len(group)!=0):
+            for i, elemento in enumerate(group):
+                if i==0:
+                    tipo = group[i]
+                    var = Variavel(group[i], group[i+1], linha)
+                    self.variaveis.append(var)
+                elif elemento == ",":
+                    var = Variavel(tipo, group[i+1], linha)
+                    self.variaveis.append(var)
+                elif elemento == ";" and i+1 != len(group):
+                    tipo = group[i+1]
+                    var = Variavel(tipo, group[i+2], linha)
+                    self.variaveis.append(var)
+    def preencher_procedimentos(self, group):
+        print(group)
     def preencher_start(self, group):
         return
 
