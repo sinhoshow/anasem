@@ -4,7 +4,12 @@ structs{
         int idade;
     };
 
-    struct funcionario extends struct pessoa{
+    struct empresa{
+        string nome;
+        int valor;
+    };
+
+    struct funcionario extends pessoa{
         real valor;
     };
 
