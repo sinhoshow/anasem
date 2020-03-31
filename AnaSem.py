@@ -8,6 +8,7 @@ from Models.Typedef import Typedef
 from Models.Variavel import Variavel
 from Models.Funcao import Funcao
 from Models.Estrutura import Estrutura 
+from Models.Procedimento import Procedimento
 
 class AnaSem():
     funcoes = []
@@ -96,24 +97,37 @@ class AnaSem():
 
     def preencher_funcoes(self, group):
         indexes_functions = [i for i, e in enumerate(group) if e == 'function']
-        for i, indice in enumerate(indexes_functions):
+        for i, indice in enumerate(indexes_functions):            
             variaveis = []
             params = []
+
             params = self.get_params_functions(group, indice)
             content_function = self.find_bracket_groups(group)[i]
             content_var = self.find_bracket_groups(content_function)[0]
+
+            index_retorno = content_function.index('return')
+            retorno = content_function[index_retorno+1] + content_function[index_retorno+2] + content_function[index_retorno+3]
+
             variaveis = self.get_variaveis(content_var)
-            self.funcoes.append(Funcao(group[indice+1], group[indice+2], params, variaveis, self.linha)) 
+            self.funcoes.append(Funcao(group[indice+1], group[indice+2], params, variaveis, retorno, self.linha))
 
     def preencher_constantes(self, group):
         self.constantes = self.get_variaveis(group)
 
     def preencher_variaveis_globais(self, group):
-        linha = '1'
-        tipo = ''
         self.variaveis = self.get_variaveis(group)
+
     def preencher_procedimentos(self, group):
-        return
+        indexes_procedures = [i for i, e in enumerate(group) if e == 'procedure']
+        for i, indice in enumerate(indexes_procedures):
+            variaveis = []
+            params = []
+            params = self.get_params_functions(group, indice)
+            content_procedure = self.find_bracket_groups(group)[i]
+            content_var = self.find_bracket_groups(content_procedure)[0]
+            variaveis = self.get_variaveis(content_var)
+            self.procedimentos.append(Procedimento(group[indice+1], params, variaveis, self.linha))
+
     def preencher_start(self, group):
         return
 
