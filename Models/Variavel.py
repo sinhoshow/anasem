@@ -9,4 +9,4 @@ class Variavel():
         self.linha = linha
 
     def __str__(self):
-        return self.linha + ' || ' + self.tipo + '  ' + self.nome + '  '  
+        return str(self.linha) + ' || ' + self.tipo + '  ' + self.nome + '  '  

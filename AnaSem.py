@@ -1,10 +1,12 @@
 import sys
 import os.path
 import string
+
 from Models import *
 from AnaLex import Analex
 from Models.Typedef import Typedef
-from Models.Variavel import Variavel 
+from Models.Variavel import Variavel
+from Models.Estrutura import Estrutura 
 
 class AnaSem():
     metodos = []
@@ -13,6 +15,7 @@ class AnaSem():
     variaveis = []
     estruturas = []
     typedefs = []
+    linha=1
 
     def analisa(self):
         erros = []
@@ -69,8 +72,13 @@ class AnaSem():
     
     def preencher_estruturas(self, group):
         indexes_structs = [i for i, e in enumerate(group) if e == 'struct']
-        contents_strucuts = self.find_bracket_groups(group)
-        print(len(contents_strucuts))
+        contents_structs = self.find_bracket_groups(group)
+        for i, indice in enumerate(indexes_structs):
+            atributos = []
+            atributosAux = self.split_lists(contents_structs[i], ';')
+            for atributo in atributosAux:
+                atributos.append(Variavel(atributo[0], atributo[1], self.linha))
+            self.estruturas.append(Estrutura(group[indice+1], atributos, self.linha))
 
     def preencher_typedefs(self, group):
         for i, elemento in enumerate(group):
@@ -107,6 +115,21 @@ class AnaSem():
         print(group)
     def preencher_start(self, group):
         print(group)
+
+    def split_lists(self, lista, spliter):
+        indexes_of_spliter = [i for i, e in enumerate(lista) if e == spliter]
+
+        listas = [lista[i : j] for i, j in zip([0] + 
+          indexes_of_spliter, indexes_of_spliter + [None])]
+        del(listas[-1])
+
+        for auxList in listas:
+            try:
+                auxList.remove(spliter)
+            except:
+                continue
+
+        return listas
 
 
 
