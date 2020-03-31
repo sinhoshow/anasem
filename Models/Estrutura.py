@@ -9,4 +9,4 @@ class Estrutura():
         self.linha = linha
 
     def __str__(self):
-        return self.linha + ' || struct ' + self.nome
+        return str(self.linha) + ' || struct ' + self.nome
