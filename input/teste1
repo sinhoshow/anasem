@@ -41,12 +41,6 @@ functions{
        
         return global.mille;
     }
-    function int calcula_extra(real salario, int codigo){
-        var{
-            int a;
-        }
-        return local.a;
-    }
 }
 
 procedures{
