@@ -1,1 +1,12 @@
-SUCESSO! sem erros
+
+
+
+Erros: 
+
+Linha:1 / Erro de Unicidade Constante ja declarada: a
+Linha:1 / Erro de Unicidade Variavel ja declarada: b
+Linha:1 / Erro de Unicidade Variavel ja declarada: cidade
+Linha:1 / Erro de Unicidade Nome ja utilizado em Parametro: salario
+Linha:1 / Erro de Unicidade Nome ja utilizado em Parametro: cidade
+Linha:1 / Erro de Unicidade Nome ja utilizado em Parametro: cep
+Linha:1 / Erro de Unicidade Variavel ja declarada: alfa

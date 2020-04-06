@@ -22,10 +22,12 @@ typedefs{
 
 const{
     real base_calculo = 0.2;
+    real a = 3;
+    real a = 4;
 }
 
 var{
-    int n, b, a, b;
+    int n, b, a, cidade;
     string codigo[];
     boolean b;
     real mille;
@@ -41,7 +43,7 @@ functions{
        
         return global.mille;
     }
-    function int calcula_extra(real salario, int codigo){
+    function int calcula_extra(real salario, int codigo, int salario){
         var{
             int a;
         }
@@ -50,9 +52,10 @@ functions{
 }
 
 procedures{
-    procedure calcula_extra(string cidade){
+    procedure calcula_extra(string cidade, int cep, string cidade){
         var{
-            string estado;
+            string estado, alfa;
+            int cep, alfa;
         }
     }
 }
