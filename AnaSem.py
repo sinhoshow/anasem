@@ -9,6 +9,7 @@ from Models.Variavel import Variavel
 from Models.Funcao import Funcao
 from Models.Estrutura import Estrutura 
 from Models.Procedimento import Procedimento
+from Models.Erro import Erro
 
 class AnaSem():
     funcoes = []
@@ -17,10 +18,10 @@ class AnaSem():
     variaveis = []
     estruturas = []
     typedefs = []
+    erros = []
     linha=1
 
     def analisa(self):
-        erros = []
         analex = Analex()
         arquivos = os.listdir('input')        
         for nome_arquivo in arquivos:
@@ -35,9 +36,9 @@ class AnaSem():
             self.preencher_procedimentos(groups[5])
             self.preencher_start(groups[6])
             conteudo = ''
-            if (erros):
+            if (self.erros):
                 conteudo += '\n\n\nErros: \n\n'
-                for erro in erros:
+                for erro in self.erros:
                     conteudo += 'Linha:'+ str(erro.linha)+ ' / Lexema:'+ erro.lexema+ ' / Token: '+ erro.erro+ '\n'
             else:
                 conteudo += "SUCESSO! sem erros"
@@ -148,20 +149,50 @@ class AnaSem():
 
     def get_variaveis(self, content):
         variaveis = []
+        tipo = ""
         if(len(content)!=0):
             for i, elemento in enumerate(content):
                 if i==0:
                     tipo = content[i]
-                    var = Variavel(content[i], content[i+1], self.linha)
+                    identificador = content[i+1]
+                    var = Variavel(content[i], identificador, self.linha)
                     variaveis.append(var)
                 elif elemento == ",":
-                    var = Variavel(tipo, content[i+1], self.linha)
+                    identificador = content[i+1]
+                    var = Variavel(tipo, identificador, self.linha)
                     variaveis.append(var)
                 elif elemento == ";" and i+1 != len(content):
                     tipo = content[i+1]
-                    var = Variavel(tipo, content[i+2], self.linha)
+                    identificador = content[i+2]
+                    var = Variavel(tipo, identificador, self.linha)
                     variaveis.append(var)
+        
+        print("------------VARIAVEIS-----------")
+        for variavel in variaveis:
+            print(variavel.tipo + " " + variavel.nome)
+
         return variaveis
+
+    def get_params(self, content):
+        parametros = []
+        tipo = ""
+        if(len(content)!=0):
+            for i, elemento in enumerate(content):
+                if i==0:
+                    tipo = content[i]
+                    identificador = content[i+1]
+                    var = Variavel(content[i], identificador, self.linha)
+                    parametros.append(var)
+                elif elemento == ",":
+                    tipo = content[i+1]
+                    identificador = content[i+2]
+                    var = Variavel(tipo, identificador, self.linha)
+                    parametros.append(var)
+        print("----------PARAMETROS-----------")
+        for param in parametros:
+            print(param.tipo + " " + param.nome)
+        
+        return parametros
 
     def get_params_functions(self, group, indice):
         open_parenteses = 0
@@ -176,7 +207,7 @@ class AnaSem():
                 del(auxGroup[0])
                 del(auxGroup[-1])
                 break
-        params = self.get_variaveis(auxGroup)
+        params = self.get_params(auxGroup)
         return params
 
 
