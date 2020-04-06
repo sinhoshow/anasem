@@ -4,7 +4,7 @@ import string
 
 class Erro():
     def __init__(self,tipo,erro,linha):
-    	self.tipo = tipo
+        self.tipo = tipo
         self.erro = erro
         self.linha = linha
 

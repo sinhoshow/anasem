@@ -27,7 +27,7 @@ const{
 var{
     int n;
     string codigo[];
-    boolean b = false;
+    boolean b;
     real mille;
     string cidade;
 }
@@ -36,16 +36,18 @@ functions{
     function real calcula_extra(real salario){
         var{
             int a[][];
-            p pessoa;
+            int pessoa;
         }
+
+        pessoa = 23;
        
-        return global.mille;
+        return global.base_calculo;
     }
-    function int calcula_extra(real salario, int codigo){
+    function real calcula_extra2(real salario, int codigo){
         var{
-            int a;
+            real a;
         }
-        return local.a;
+        return local.codigo;
     }
 }
 

@@ -13,5 +13,5 @@ class Funcao():
 
 
     def __str__(self):
-        return self.linha + ' || ' + 'Metodo: ' + self.tipo + ' ' + self.nome   
+        return str(self.linha) + ' || ' + 'Metodo: ' + self.tipo + ' ' + self.nome
         
