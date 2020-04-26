@@ -36,6 +36,7 @@ class AnaSem():
             self.preencher_procedimentos(groups[5])
             self.preencher_start(groups[6])
             for i, corpo_funcao in enumerate(self.corpo_funcoes):
+                self.verificar_chamada_funcoes(corpo_funcao, self.funcoes[i])
                 self.verificar_tipo_atribuicoes(corpo_funcao, self.funcoes[i])            
             self.verificar_retorno_funcoes()
             #Verificacao de erros
@@ -171,10 +172,6 @@ class AnaSem():
                     tipo = content[i+1].lexema
                     var = Variavel(tipo, content[i+2].lexema, content[i+1].linha)
                     variaveis.append(var)
-        
-        # print("------------VARIAVEIS-----------")
-        # for variavel in variaveis:
-            # print(variavel.tipo + " " + variavel.nome)
 
         return variaveis
 
@@ -239,7 +236,6 @@ class AnaSem():
                     parametros.append(variavel)
                 elif elemento.lexema == 'global':
                     variavel = self.verificar_existencia_variaveis(content[i+2].lexema)
-                    print(variavel)
                     if (not variavel):
                         self.erros.append(Erro('Variavel não declarada', content[i+2].lexema, content[i+2].linha))
                         continue
@@ -308,18 +304,9 @@ class AnaSem():
                 ##verificar se a funcao existe comparando os parâmetros passados
                 indice_funcao = [i for i, e in enumerate(self.funcoes) if e.nome == group[indice+1].lexema]
                 if(indice_funcao):
-                    ##pegando parametros da funcao
-                    parametros_funcao = self.get_call_params_functions(group, indice+1, funcao)
-                    param_function = self.funcoes[indice_funcao[0]].parametros
-                    if (not self.funcoes[indice_funcao[0]].verify_params(parametros_funcao)):
-                        erro = Erro('Parametros invalidos', group[indice+1].lexema, group[indice+1].linha)
-                        self.erros.append(erro)
                     tipo_funcao = self.funcoes[indice_funcao[0]].tipo
                     if tipo_variavel != tipo_funcao:
                         erro = Erro('Tipo de funcao invalida', group[indice+1].lexema, group[indice+1].linha)
-                        self.erros.append(erro)
-                else:   
-                        erro = Erro('Funcao nao encontrada ou ainda nao declarada', group[indice+1].lexema, group[indice+1].linha)
                         self.erros.append(erro)
             elif tipo_variavel == 'int' and not group[indice+1].lexema.isdigit():
                 erro = Erro('Tipo inteiro invalido', group[indice+1].lexema, group[indice+1].linha)
@@ -336,6 +323,29 @@ class AnaSem():
             elif (tipo_variavel == 'real' and group[indice+1].token == 'Numero') and '.' in group[indice+1].lexema:
                 erro = Erro('Tipo real invalido', group[indice+1].lexema, group[indice+1].linha)
                 self.erros.append(erro)
+
+    def verificar_chamada_funcoes(self, group, funcao):
+        indices_parenteses = [i for i, e in enumerate(group) if e.lexema == '(']
+        for i ,indice in enumerate(indices_parenteses):
+            if (group[indice-1].token == 'identificador'):
+                indice_funcao = [i for i, e in enumerate(self.funcoes) if e.nome == group[indice-1].lexema]
+                if(not indice_funcao):
+                    indice_procedimento = [i for i, e in enumerate(self.procedimentos) if e.nome == group[indice-1].lexema]
+                    if (indice_procedimento):
+                        parametros_procedimento = self.get_call_params_functions(group, indice-1, funcao)
+                        if (not self.procedimentos[indice_procedimento[0]].verify_params(parametros_procedimento)):
+                            erro = Erro('Parametros invalidos', group[indice-1].lexema, group[indice-1].linha)
+                            self.erros.append(erro)
+                    else:
+                        erro = Erro('Funcao ou procedimento nao encontrado', group[indice-1].lexema, group[indice-1].linha)
+                        self.erros.append(erro)
+                if(indice_funcao):
+                    ##pegando parametros da funcao
+                    parametros_funcao = self.get_call_params_functions(group, indice-1, funcao)
+                    if (not self.funcoes[indice_funcao[0]].verify_params(parametros_funcao)):
+                        erro = Erro('Parametros invalidos', group[indice+1].lexema, group[indice+1].linha)
+                        self.erros.append(erro)
+
             
     def verificar_existencia_variaveis(self, variavel):
         for variavel_global in self.variaveis:

@@ -41,11 +41,11 @@ functions{
             real pessoa, felipe;
         }
 
-        local.pessoa = calcula_extra2(local.pessoa, global.base_calculo, local.a[2][1]);
-       
+        local.pessoa = calcula_extra2(local.b, global.base_calculo, local.a[2][1]);
+        calcula_extra4("hehehe", 25.3, "Feira de Santana")
         return global.base_calculo;
     }
-    function real calcula_extra2(real salario, real codigo, int salario){
+    function real calcula_extra2(int salario, real codigo, int salario){
         var{
             real a;
         }
@@ -54,7 +54,7 @@ functions{
 }
 
 procedures{
-    procedure calcula_extra(string cidade, int cep, string cidade){
+    procedure calcula_extra4(string cidade, real cep, string cidade){
         var{
             string estado, alfa;
             int cep, alfa;
