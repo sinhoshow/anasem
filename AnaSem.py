@@ -89,7 +89,7 @@ class AnaSem():
             atributos_aux = self.split_lists(contents_structs[i], ';')
             for atributo in atributos_aux:
                 atributos.append(Variavel(atributo[0].lexema, atributo[1].lexema, atributo[1].linha))
-            self.estruturas.append(Estrutura(group[indice+1], atributos, group[indice+1].linha))
+            self.estruturas.append(Estrutura(group[indice+1].lexema, atributos, group[indice+1].linha))
 
         for indice_extends in indexes_extends:
             for estrutura in self.estruturas:
@@ -142,6 +142,7 @@ class AnaSem():
         return
 
     def split_lists(self, lista, spliter):
+        
         indexes_of_spliter = [i for i, e in enumerate(lista) if e.lexema == spliter]
 
         listas = [lista[i : j] for i, j in zip([0] + 
@@ -149,8 +150,10 @@ class AnaSem():
         del(listas[-1])
 
         for auxList in listas:
+            indexes_of_spliter = [i for i, e in enumerate(auxList) if e.lexema == spliter]
             try:
-                auxList.remove(spliter)
+                for spliter in indexes_of_spliter:
+                    auxList.remove(auxList[spliter])
             except:
                 continue
 
@@ -228,27 +231,46 @@ class AnaSem():
         parametros = []
         if(len(content)!=0):
             for i, elemento in enumerate(content):
-                if elemento.lexema == 'local':
-                    variavel = funcao.exists_variavel(content[i+2].lexema)
+                if (elemento.lexema == 'local' or elemento.lexema == 'global'):
+                    if elemento.lexema == 'local':
+                        variavel = funcao.exists_variavel(content[i+2].lexema)
+                    elif elemento.lexema == 'global':
+                        variavel = self.verificar_existencia_variaveis(content[i+2].lexema)
                     if (not variavel):
                         self.erros.append(Erro('Variavel não declarada', content[i+2].lexema, content[i+2].linha))
-                        continue
-                    parametros.append(variavel)
-                elif elemento.lexema == 'global':
-                    variavel = self.verificar_existencia_variaveis(content[i+2].lexema)
-                    if (not variavel):
-                        self.erros.append(Erro('Variavel não declarada', content[i+2].lexema, content[i+2].linha))
-                        continue
-                    parametros.append(variavel)
+                        continue                        
+                    if content[i+3].lexema == '.':
+                        atributo_struct = content[i+4]
+                        struct_name = variavel.tipo
+                        estrutura_indice = [i for i, e in enumerate(self.estruturas) if e.nome == struct_name]
+                        if (estrutura_indice):
+                            estrutura = self.estruturas[estrutura_indice[0]]
+                            atributo = estrutura.get_attribute(atributo_struct.lexema)
+                            if(atributo):
+                                parametros.append(Variavel(atributo.tipo, atributo.nome, atributo_struct.linha))
+                            else:
+                                self.erros.append(Erro('Atributo da estrutura inválido ou não declarado', atributo_struct.lexema, atributo_struct.linha))
+                        else:
+                            self.erros.append(Erro('Tipo de estrutura inválido ou não declarado', variavel.lexema, variavel.linha))
+                    else:
+                        parametros.append(variavel)
                 elif elemento.token == 'Cadeia de caractere':
                     variavel = Variavel('string', 'string', elemento.linha)
                     parametros.append(variavel)
-                elif elemento.token == 'Numero' and content[i-1].lexema != '[' and content[i+1] != ']':
-                    if '.' in elemento.lexema:
-                        variavel = Variavel('real', 'real', elemento.linha)
-                    else:
-                        variavel = Variavel('int', 'int', elemento.linha)
-                    parametros.append(variavel)
+                elif elemento.token == 'Numero':
+                    try:
+                        if content[i-1].lexema != '[' and content[i+1] != ']':
+                            if '.' in elemento.lexema:
+                                variavel = Variavel('real', 'real', elemento.linha)
+                            else:
+                                variavel = Variavel('int', 'int', elemento.linha)
+                            parametros.append(variavel)
+                    except:
+                        if '.' in elemento.lexema:
+                            variavel = Variavel('real', 'real', elemento.linha)
+                        else:
+                            variavel = Variavel('int', 'int', elemento.linha)
+                        parametros.append(variavel)
                 elif elemento == ",":
                     continue
         
@@ -258,56 +280,85 @@ class AnaSem():
         indices_igual = [i for i, e in enumerate(group) if e.lexema == '=']
         
         for i ,indice in enumerate(indices_igual):
-            escopo = group[indice-3].lexema
-            variavel_aux = group[indice-1]
-            tipo_variavel = None
-            if escopo == 'local':
-                variavel = funcao.exists_variavel(variavel_aux.lexema)
+            if (group[indice-4].lexema != '.'):                
+                escopo = group[indice-3].lexema
+                variavel_aux = group[indice-1]
+                tipo_variavel = None
+                if escopo == 'local':
+                    variavel = funcao.exists_variavel(variavel_aux.lexema)
+                elif escopo == 'global':
+                    variavel = self.verificar_existencia_variaveis(variavel_aux.lexema)
                 if (not variavel):
                     self.erros.append(Erro('Variavel não declarada', variavel_aux.lexema, variavel_aux.linha))
                 else:
                     tipo_variavel = variavel.tipo
-            elif escopo == 'global':
-                variavel = self.verificar_existencia_variaveis(variavel_aux.lexema)
+            else:                           
+                escopo = group[indice-5].lexema
+                variavel_aux = group[indice-3]                
+                atributo_struct = group[indice-1]
+                tipo_variavel = None                
+                if escopo == 'local':
+                    variavel = funcao.exists_variavel(variavel_aux.lexema)
+                elif escopo == 'global':
+                    variavel = self.verificar_existencia_variaveis(variavel_aux.lexema)
                 if (not variavel):
-                    self.erros.append(Erro('Variavel não declarada', variavel_aux.lexema, variavel.linha))
-                else:
-                    tipo_variavel = variavel.tipo
-            
-            #verificar caso seja o parâmetro de uma struct
-            tipo_variavel2 = None
-            if group[indice+1].lexema == 'local':
-                variavel2_aux = group[indice+3]
-                variavel2 = funcao.exists_variavel(variavel2_aux.lexema)
-                if (not variavel2):
-                    self.erros.append(Erro('Variavel não declarada', variavel2_aux.lexema, variavel2_aux.linha))
-                    continue
-                else:
-                    tipo_variavel2 = variavel2.tipo
-            elif group[indice+1].lexema == 'global':
-                variavel2_aux = group[indice+3]
-                variavel2 = self.verificar_existencia_variaveis(variavel2_aux.lexema)
-                if (not variavel2):
-                    self.erros.append(Erro('Variavel não declarada', variavel2_aux.lexema, variavel2_aux.linha))
-                    continue
-                else:
-                    tipo_variavel2 = variavel2.tipo
-            
-            if (tipo_variavel and tipo_variavel2 and (tipo_variavel != tipo_variavel2)):
-                erro = Erro('Atribuição de tipo diferente', variavel2.lexema, variavel2.linha)
-                self.erros.append(erro)
-                continue
-            
-            #Verificar expressões
+                    self.erros.append(Erro('Variavel não declarada', variavel_aux.lexema, variavel_aux.linha))
+                else:                    
+                    struct_name = variavel.tipo
+                    estrutura_indice = [i for i, e in enumerate(self.estruturas) if e.nome == struct_name]
+                    if (estrutura_indice):
+                        estrutura = self.estruturas[estrutura_indice[0]]
+                        atributo = estrutura.get_attribute(atributo_struct.lexema)
+                        if(atributo):
+                            tipo_variavel = atributo.tipo
+                        else:
+                            self.erros.append(Erro('Atributo da estrutura inválido ou não declarado', atributo_struct.lexema, atributo_struct.linha))
+                    else:
+                        self.erros.append(Erro('Tipo de estrutura inválido ou não declarado', variavel_aux.lexema, variavel_aux.linha))
 
-            if group[indice+1].token == 'identificador':
-                ##verificar se a funcao existe comparando os parâmetros passados
+
+            tipo_variavel2 = None
+            if (group[indice+1].lexema == 'local' or group[indice+1].lexema == 'global'):              
+                if group[indice+1].lexema == 'local':
+                    variavel2_aux = group[indice+3]
+                    variavel2 = funcao.exists_variavel(variavel2_aux.lexema)
+                elif group[indice+1].lexema == 'global':
+                    variavel2_aux = group[indice+3]
+                    variavel2 = self.verificar_existencia_variaveis(variavel2_aux.lexema)
+                if (not variavel2):
+                    self.erros.append(Erro('Variavel não declarada', variavel2_aux.lexema, variavel2_aux.linha))
+                    continue                
+                if group[indice+4].lexema == '.':
+                    atributo_struct2 = group[indice+5]                 
+                    struct_name2 = variavel2.tipo
+                    estrutura_indice2 = [i for i, e in enumerate(self.estruturas) if e.nome == struct_name2]
+                    if (estrutura_indice2):
+                        estrutura2 = self.estruturas[estrutura_indice2[0]]
+                        atributo2 = estrutura2.get_attribute(atributo_struct2.lexema)
+                        if(atributo2):
+                            tipo_variavel2 = atributo2.tipo
+                        else:
+                            self.erros.append(Erro('Atributo da estrutura inválido ou não declarado', atributo_struct2.lexema, atributo_struct2.linha))
+                    else:
+                        self.erros.append(Erro('Tipo de estrutura inválido ou não declarado', variavel2_aux.lexema, variavel2_aux.linha))                
+                else:
+                    tipo_variavel2 = variavel2.tipo
+            
+                if (tipo_variavel and tipo_variavel2 and (tipo_variavel != tipo_variavel2)):
+                    erro = Erro('Atribuição de tipo diferente', variavel2.nome, variavel2.linha)
+                    self.erros.append(erro)
+                    continue
+
+            elif group[indice+1].token == 'identificador':
                 indice_funcao = [i for i, e in enumerate(self.funcoes) if e.nome == group[indice+1].lexema]
                 if(indice_funcao):
                     tipo_funcao = self.funcoes[indice_funcao[0]].tipo
                     if tipo_variavel != tipo_funcao:
                         erro = Erro('Tipo de funcao invalida', group[indice+1].lexema, group[indice+1].linha)
                         self.erros.append(erro)
+                else:
+                    erro = Erro('Procedimentos não são atribuíveis', group[indice+1].lexema, group[indice+1].linha)
+                    self.erros.append(erro)
             elif tipo_variavel == 'int' and not group[indice+1].lexema.isdigit():
                 erro = Erro('Tipo inteiro invalido', group[indice+1].lexema, group[indice+1].linha)
                 self.erros.append(erro)
@@ -343,7 +394,7 @@ class AnaSem():
                     ##pegando parametros da funcao
                     parametros_funcao = self.get_call_params_functions(group, indice-1, funcao)
                     if (not self.funcoes[indice_funcao[0]].verify_params(parametros_funcao)):
-                        erro = Erro('Parametros invalidos', group[indice+1].lexema, group[indice+1].linha)
+                        erro = Erro('Parametros invalidos', group[indice-1].lexema, group[indice-1].linha)
                         self.erros.append(erro)
 
             
@@ -367,23 +418,28 @@ class AnaSem():
             variavel_retorno = retorno_total[-1]
             escopo = retorno_total[0]
             if (escopo == 'local'):
-                indice_retorno = [i for i, e in enumerate(variaveis) if e.nome == variavel_retorno]                
-                if indice_retorno:
-                    retorno = variaveis[indice_retorno[0]]
-                if not indice_retorno:
-                    
-                    indice_retorno = [i for i, e in enumerate(parametros) if e.nome == variavel_retorno]
+                if (len(retorno_total) <= 3):
+                    indice_retorno = [i for i, e in enumerate(variaveis) if e.nome == variavel_retorno]                
                     if indice_retorno:
-                        retorno = parametros[indice_retorno[0]]
+                        retorno = variaveis[indice_retorno[0]]
+                    if not indice_retorno:                        
+                        indice_retorno = [i for i, e in enumerate(parametros) if e.nome == variavel_retorno]
+                        if indice_retorno:
+                            retorno = parametros[indice_retorno[0]]
+                        if not indice_retorno:
+                            self.erros.apped(Erro('Variável de retorno não declarada na funcao', funcao.nome, funcao.linha))
                 
             elif (escopo == 'global'):
-                indice_retorno = [i for i, e in enumerate(self.variaveis) if e.nome == variavel_retorno]
-                if indice_retorno:
-                    retorno = self.variaveis[indice_retorno[0]]
-                if not indice_retorno:
-                    indice_retorno = [i for i, e in enumerate(self.constantes) if e.nome == variavel_retorno]
+                if (len(retorno_total) <= 3):
+                    indice_retorno = [i for i, e in enumerate(self.variaveis) if e.nome == variavel_retorno]
                     if indice_retorno:
-                        retorno = self.constantes[indice_retorno[0]]
+                        retorno = self.variaveis[indice_retorno[0]]
+                    if not indice_retorno:
+                        indice_retorno = [i for i, e in enumerate(self.constantes) if e.nome == variavel_retorno]
+                        if indice_retorno:
+                            retorno = self.constantes[indice_retorno[0]]
+                        if not indice_retorno:
+                            self.erros.apped(Erro('Variável de retorno não declarada na funcao', funcao.nome, funcao.linha))
             
             
             if funcao.tipo != retorno.tipo:

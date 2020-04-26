@@ -38,18 +38,20 @@ functions{
     function real calcula_extra(real salario){
         var{
             int a[][], b, f;
-            real pessoa, felipe;
+            pessoa p, felipe;
+            string teste;
+            empresa e;
         }
 
-        local.pessoa = calcula_extra2(local.b, global.base_calculo, local.a[2][1]);
-        calcula_extra4("hehehe", 25.3, "Feira de Santana")
+        local.p.idade = calcula_extra2(local.e.nome, 12.5, 32);
+        
         return global.base_calculo;
     }
-    function real calcula_extra2(int salario, real codigo, int salario){
+    function int calcula_extra2(int salario, real codigo, int salario){
         var{
             real a;
         }
-        return local.codigo;
+        return local.salario;
     }
 }
 
