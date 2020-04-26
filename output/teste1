@@ -1,11 +1,1 @@
-
-
-
-Erros: 
-
-Linha:48 / Tipo de retorno invalido calcula_extra
-Linha:26 / Erro de Unicidade Constante ja declarada: a
-Linha:32 / Erro de Unicidade Variavel ja declarada: b
-Linha:34 / Erro de Unicidade Variavel ja declarada: cidade
-Linha:60 / Erro de Unicidade Variavel ja declarada: alfa
-Linha:48 / Erro de Unicidade Funcao ja declarada: calcula_extra
+SUCESSO! sem erros

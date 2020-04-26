@@ -10,3 +10,6 @@ class Variavel():
 
     def __str__(self):
         return str(self.linha) + ' || ' + self.tipo + '  ' + self.nome + '  '  
+
+    def __eq__(self, other):
+        return self.nome == other.nome

@@ -13,6 +13,7 @@ from Models.Erro import Erro
 
 class AnaSem():
     funcoes = []
+    corpo_funcoes = []
     procedimentos = []
     constantes = []
     variaveis = []
@@ -34,10 +35,12 @@ class AnaSem():
             self.preencher_funcoes(groups[4])
             self.preencher_procedimentos(groups[5])
             self.preencher_start(groups[6])
+            for i, corpo_funcao in enumerate(self.corpo_funcoes):
+                self.verificar_tipo_atribuicoes(corpo_funcao, self.funcoes[i])            
             self.verificar_retorno_funcoes()
             #Verificacao de erros
             #1-Unicidade
-            self.verificar_unicidade()
+            #self.verificar_unicidade()
             conteudo = ''
             if (self.erros):
                 conteudo += '\n\n\nErros: \n\n'
@@ -115,7 +118,7 @@ class AnaSem():
             variaveis = self.get_variaveis(content_var)
             funcao = Funcao(group[indice+1].lexema, group[indice+2].lexema, params, variaveis, retorno, group[indice+1].linha)
             self.funcoes.append(funcao)
-            self.verificar_tipo_atribuicoes(content_function, funcao)
+            self.corpo_funcoes.append(content_function)
 
     def preencher_constantes(self, group):
         self.constantes = self.get_variaveis(group)
@@ -177,7 +180,7 @@ class AnaSem():
 
     def get_params(self, content):
         parametros = []
-        tipo = ""
+        tipo = ""        
         if(len(content)!=0):
             for i, elemento in enumerate(content):
                 if i==0:
@@ -185,15 +188,11 @@ class AnaSem():
                     identificador = content[i+1].lexema
                     var = Variavel(content[i].lexema, identificador, content[i].linha)
                     parametros.append(var)
-                elif elemento == ",":
+                elif elemento.lexema == ",":
                     tipo = content[i+1].lexema
                     identificador = content[i+2].lexema
                     var = Variavel(tipo, identificador, content[i].linha)
                     parametros.append(var)
-        # print("----------PARAMETROS-----------")
-        # for param in parametros:
-        #     print(param.tipo + " " + param.nome)
-        
         return parametros
 
     def get_params_functions(self, group, indice):
@@ -211,27 +210,110 @@ class AnaSem():
                 break
         params = self.get_params(auxGroup)
         return params
+    
+    def get_call_params_functions(self, group, indice, funcao):
+        open_parenteses = 0
+        group = group[indice:]
+        auxGroup = []
+        for elemento in group:
+            if elemento.lexema == "(":
+                open_parenteses += 1
+            if open_parenteses > 0:
+                auxGroup.append(elemento)
+            if elemento.lexema == ")":
+                del(auxGroup[0])
+                del(auxGroup[-1])
+                break
+        params = self.get_call_params(auxGroup, funcao)
+        return params
+    
+    def get_call_params(self, content, funcao):
+        parametros = []
+        if(len(content)!=0):
+            for i, elemento in enumerate(content):
+                if elemento.lexema == 'local':
+                    variavel = funcao.exists_variavel(content[i+2].lexema)
+                    if (not variavel):
+                        self.erros.append(Erro('Variavel não declarada', content[i+2].lexema, content[i+2].linha))
+                        continue
+                    parametros.append(variavel)
+                elif elemento.lexema == 'global':
+                    variavel = self.verificar_existencia_variaveis(content[i+2].lexema)
+                    print(variavel)
+                    if (not variavel):
+                        self.erros.append(Erro('Variavel não declarada', content[i+2].lexema, content[i+2].linha))
+                        continue
+                    parametros.append(variavel)
+                elif elemento.token == 'Cadeia de caractere':
+                    variavel = Variavel('string', 'string', elemento.linha)
+                    parametros.append(variavel)
+                elif elemento.token == 'Numero' and content[i-1].lexema != '[' and content[i+1] != ']':
+                    if '.' in elemento.lexema:
+                        variavel = Variavel('real', 'real', elemento.linha)
+                    else:
+                        variavel = Variavel('int', 'int', elemento.linha)
+                    parametros.append(variavel)
+                elif elemento == ",":
+                    continue
+        
+        return parametros
 
     def verificar_tipo_atribuicoes(self, group, funcao):
         indices_igual = [i for i, e in enumerate(group) if e.lexema == '=']
         
         for i ,indice in enumerate(indices_igual):
-            variavel = group[indice-1].lexema
-            indice_variavel = [i for i, e in enumerate(funcao.variaveis) if e.nome == variavel]
-            tipo_variavel = funcao.variaveis[indice_variavel[0]].tipo
+            escopo = group[indice-3].lexema
+            variavel_aux = group[indice-1]
+            tipo_variavel = None
+            if escopo == 'local':
+                variavel = funcao.exists_variavel(variavel_aux.lexema)
+                if (not variavel):
+                    self.erros.append(Erro('Variavel não declarada', variavel_aux.lexema, variavel_aux.linha))
+                else:
+                    tipo_variavel = variavel.tipo
+            elif escopo == 'global':
+                variavel = self.verificar_existencia_variaveis(variavel_aux.lexema)
+                if (not variavel):
+                    self.erros.append(Erro('Variavel não declarada', variavel_aux.lexema, variavel.linha))
+                else:
+                    tipo_variavel = variavel.tipo
             
-            if group[indice+1].lexema == 'local' or group[indice+1].lexema == 'global':
-                variavel2 = group[indice+3]                
-                indice_variavel2 = [i for i, e in enumerate(funcao.variaveis) if e.nome == variavel2]
-                tipo_variavel2 = funcao.variaveis[indice_variavel2[0]].tipo
-                if (tipo_variavel != tipo_variavel2):
-                    erro = Erro('Atribuição de tipo diferente', variavel2, 1)
-                    self.erros.append(erro)
+            #verificar caso seja o parâmetro de uma struct
+            tipo_variavel2 = None
+            if group[indice+1].lexema == 'local':
+                variavel2_aux = group[indice+3]
+                variavel2 = funcao.exists_variavel(variavel2_aux.lexema)
+                if (not variavel2):
+                    self.erros.append(Erro('Variavel não declarada', variavel2_aux.lexema, variavel2_aux.linha))
                     continue
+                else:
+                    tipo_variavel2 = variavel2.tipo
+            elif group[indice+1].lexema == 'global':
+                variavel2_aux = group[indice+3]
+                variavel2 = self.verificar_existencia_variaveis(variavel2_aux.lexema)
+                if (not variavel2):
+                    self.erros.append(Erro('Variavel não declarada', variavel2_aux.lexema, variavel2_aux.linha))
+                    continue
+                else:
+                    tipo_variavel2 = variavel2.tipo
+            
+            if (tipo_variavel and tipo_variavel2 and (tipo_variavel != tipo_variavel2)):
+                erro = Erro('Atribuição de tipo diferente', variavel2.lexema, variavel2.linha)
+                self.erros.append(erro)
+                continue
+            
+            #Verificar expressões
 
             if group[indice+1].token == 'identificador':
+                ##verificar se a funcao existe comparando os parâmetros passados
                 indice_funcao = [i for i, e in enumerate(self.funcoes) if e.nome == group[indice+1].lexema]
                 if(indice_funcao):
+                    ##pegando parametros da funcao
+                    parametros_funcao = self.get_call_params_functions(group, indice+1, funcao)
+                    param_function = self.funcoes[indice_funcao[0]].parametros
+                    if (not self.funcoes[indice_funcao[0]].verify_params(parametros_funcao)):
+                        erro = Erro('Parametros invalidos', group[indice+1].lexema, group[indice+1].linha)
+                        self.erros.append(erro)
                     tipo_funcao = self.funcoes[indice_funcao[0]].tipo
                     if tipo_variavel != tipo_funcao:
                         erro = Erro('Tipo de funcao invalida', group[indice+1].lexema, group[indice+1].linha)
@@ -255,8 +337,17 @@ class AnaSem():
                 erro = Erro('Tipo real invalido', group[indice+1].lexema, group[indice+1].linha)
                 self.erros.append(erro)
             
-            
+    def verificar_existencia_variaveis(self, variavel):
+        for variavel_global in self.variaveis:
+            if variavel == variavel_global.nome:
+                return variavel_global
+        for constante in self.constantes:
+            if variavel == constante.nome:
+                return constante
+        return False
+    # def verificar_existencia_variaveis(self, group, funcao):
 
+    # def verificar_expressoes(self, group):
 
     def verificar_retorno_funcoes(self):
         for funcao in self.funcoes:
@@ -288,179 +379,6 @@ class AnaSem():
             if funcao.tipo != retorno.tipo:
                     erro = Erro('Tipo de retorno invalido', funcao.nome, funcao.linha)
                     self.erros.append(erro)
-
-    def verificar_unicidade(self):
-        #Constantes
-        print("******CONSTANTES*******")
-        if len(self.constantes) > 1:
-            for i, constante in enumerate(self.constantes):
-                nome1 = constante.nome
-                print("1: " + nome1)
-                for j in range(i+1,len(self.constantes)):
-                    constante_aux = self.constantes[j]
-                    nome2 = constante_aux.nome
-                    print("2: " + nome2)
-                    if nome1 == nome2:
-                        erro = Erro("Erro de Unicidade","Constante ja declarada: " + nome2, constante_aux.linha) 
-                        self.erros.append(erro)
-        else:
-            print("1: " + self.constantes[0].nome)
-        #Variaveis Globais
-        print("*******VARIAVEIS*GLOBAIS*******")
-        if len(self.variaveis) > 1:
-            for i, variavel in enumerate(self.variaveis):
-                nome1 = variavel.nome
-                print("1: " + nome1)
-                for j in range(i+1,len(self.variaveis)):
-                    variavel_aux = self.variaveis[j]
-                    nome2 = variavel_aux.nome
-                    print("2: " + nome2)
-                    if nome1 == nome2:
-                        erro = Erro("Erro de Unicidade","Variavel ja declarada: " + nome2, variavel_aux.linha) 
-                        self.erros.append(erro)
-        #Parametros de Funcoes
-        print("********PARAMETROS DE FUNCOES*******")
-        if len(self.funcoes) != 0:
-            for funcao in self.funcoes:
-                params = funcao.parametros
-                for i, variavel in enumerate(params):
-                    nome1 = variavel
-                    print(nome1)
-                    for j in range(i+1,len(params)):
-                        variavel_aux = params[j]
-                        nome2 = variavel_aux.nome
-                        print("2: " + nome2)
-                        if nome1 == nome2:
-                            erro = Erro("Erro de Unicidade","Nome ja utilizado em Parametro: " + nome2, variavel_aux.linha) 
-                            self.erros.append(erro)
-        #Parametros de Procedimentos
-        print("********PARAMETROS DE PROCEDIMENTOS*********")
-        if len(self.procedimentos) != 0:
-            for funcao in self.procedimentos:
-                params = funcao.parametros
-                for i, variavel in enumerate(params):
-                    nome1 = variavel.nome
-                    print(nome1)
-                    for j in range(i+1,len(params)):
-                        variavel_aux = params[j]
-                        nome2 = variavel_aux.nome
-                        print("2: " + nome2)
-                        if nome1 == nome2:
-                            erro = Erro("Erro de Unicidade","Nome ja utilizado em Parametro: " + nome2, variavel_aux.linha) 
-                            self.erros.append(erro)
-        #Variaveis de Procedimentos
-        print("********VARIAVEIS DE PROCEDIMENTOS*********")
-        if len(self.procedimentos) != 0:
-            for proced in self.procedimentos:
-                print("----Procedimento " + proced.nome + "----")
-                params = proced.parametros
-                variaveis = proced.variaveis
-                for i, variavel in enumerate(params):
-                    nome1 = variavel.nome
-                    print("1: " + nome1)
-                    for variavel_aux in variaveis:
-                        nome2 = variavel_aux.nome
-                        print("2: " + nome2)
-                        if nome1 == nome2:
-                            erro = Erro("Erro de Unicidade","Nome ja utilizado em Parametro: " + nome2, variavel_aux.linha) 
-                            self.erros.append(erro)
-                for i, variavel in enumerate(variaveis):
-                    nome1 = variavel.nome
-                    print("1: " + nome1)
-                    for j in range(i+1,len(variaveis)):
-                        variavel_aux = variaveis[j]
-                        nome2 = variavel_aux.nome
-                        print("2: " + nome2)
-                        if nome1 == nome2:
-                            erro = Erro("Erro de Unicidade","Variavel ja declarada: " + nome2, variavel_aux.linha) 
-                            self.erros.append(erro)                
-                            
-        #Variaveis de Funcoes
-        print("********VARIAVEIS DE FUNCOES*********")
-        if len(self.funcoes) != 0:
-            for funcao in self.funcoes:
-                print("----Funcao " + funcao.nome + "----")
-                params = funcao.parametros
-                variaveis = funcao.variaveis
-                for i, variavel in enumerate(params):
-                    nome1 = variavel.nome
-                    print("1: " + nome1)
-                    for variavel_aux in variaveis:
-                        nome2 = variavel_aux.nome
-                        print("2: " + nome2)
-                        if nome1 == nome2:
-                            erro = Erro("Erro de Unicidade","Nome ja utilizado em Parametro: " + nome2, variavel_aux.linha) 
-                            self.erros.append(erro)
-                for i, variavel in enumerate(variaveis):
-                    nome1 = variavel.nome
-                    print("1: " + nome1)
-                    for j in range(i+1,len(variaveis)):
-                        variavel_aux = variaveis[j]
-                        nome2 = variavel_aux.nome
-                        print("2: " + nome2)
-                        if nome1 == nome2:
-                            erro = Erro("Erro de Unicidade","Variavel ja declarada: " + nome2, variavel_aux.linha) 
-                            self.erros.append(erro)
-        #Assinatura de Funcao
-        print("*********ASSINATURA DE FUNCAO*******")
-        if len(self.funcoes) > 1:
-            for i, funcao in enumerate(self.funcoes):
-                nome1 = funcao.nome
-                print("1: " + nome1)
-                for j in range(i+1,len(self.funcoes)):
-                    funcao_aux = self.funcoes[j]
-                    nome2 = funcao_aux.nome
-                    print("2: " + nome2)
-                    if nome1 == nome2:
-                        params1 = funcao.parametros
-                        params2 = funcao_aux.parametros
-                        params1_string = ""
-                        params2_string = ""
-                        for param in params1:
-                            params1_string += param.tipo
-                        
-                        for param in params2:
-                            params2_string += param.tipo
-
-                        print(params1_string)
-                        print(params2_string)
-                        
-                        if params1_string == params2_string:
-                            erro = Erro("Erro de Unicidade","Funcao ja declarada: " + nome2, funcao_aux.linha) 
-                            self.erros.append(erro)
-        else:
-            print("1: " + self.funcoes[0].nome)
-
-        #Assinatura de Procedimento
-        print("*********ASSINATURA DE PROCEDIMENTOS*******")
-        if len(self.procedimentos) > 1:
-            for i, procedimento in enumerate(self.procedimentos):
-                nome1 = procedimento.nome
-                print("1: " + nome1)
-                for j in range(i+1,len(self.procedimentos)):
-                    procedimento_aux = self.procedimentos[j]
-                    nome2 = procedimento_aux.nome
-                    print("2: " + nome2)
-                    if nome1 == nome2:
-                        params1 = procedimento.parametros
-                        params2 = procedimento_aux.parametros
-                        params1_string = ""
-                        params2_string = ""
-                        for param in params1:
-                            params1_string += param.tipo
-                        
-                        for param in params2:
-                            params2_string += param.tipo
-
-                        print(params1_string)
-                        print(params2_string)
-                        
-                        if params1_string == params2_string:
-                            erro = Erro("Erro de Unicidade","Procedimento ja declarado: " + nome2, procedimento_aux.linha) 
-                            self.erros.append(erro)
-        else:
-            print("1: " + self.procedimentos[0].nome)
-
 
 analisador_semantico = AnaSem()
 analisador_semantico.analisa()

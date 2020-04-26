@@ -30,7 +30,7 @@ var{
     int n, b, a, cidade;
     string codigo[];
     boolean b;
-    real mille;
+    int mille;
     string cidade;
 }
 
@@ -38,14 +38,14 @@ functions{
     function real calcula_extra(real salario){
         var{
             int a[][], b, f;
-            p pessoa, felipe;
+            real pessoa, felipe;
         }
 
-        pessoa = 23;
+        local.pessoa = calcula_extra2(local.pessoa, global.base_calculo, local.a[2][1]);
        
         return global.base_calculo;
     }
-    function int calcula_extra(real salario, int codigo, int salario){
+    function real calcula_extra2(real salario, real codigo, int salario){
         var{
             real a;
         }
