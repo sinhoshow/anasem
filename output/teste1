@@ -3,4 +3,14 @@
 
 Erros: 
 
-Linha:46 / Parametros invalidos calcula_extra2
+Linha:68 / Parametros invalidos calculo
+Linha:70 / Parametros invalidos calculo
+Linha:61 / Atribuição de tipo diferente numero
+Linha:71 / Expressão entre tipos diferentes Exp Aritimetica
+Linha:71 / Tipo real invalido 0.3
+Linha:28 / Atribuição de tipo diferente numero
+Linha:73 / Atributo da estrutura inválido ou não declarado endereco
+Linha:74 / Atributo da estrutura inválido ou não declarado idade
+Linha:75 / Variavel não declarada cidade
+Linha:76 / Variavel não declarada valor
+Linha:77 / Variavel não declarada valor

@@ -4,13 +4,8 @@ structs{
         int idade;
     };
 
-    struct empresa{
-        string nome;
-        int valor;
-    };
-
     struct funcionario extends pessoa{
-        real valor;
+        int valor2;
     };
 
 }
@@ -21,38 +16,36 @@ typedefs{
 }
 
 const{
-    real base_calculo = 0.2;
+    real base_calculo = "te";
     real a = 3;
-    real a = 4;
+
 }
 
 var{
-    int n, b, a, cidade;
-    string codigo[];
+    int num1, num2;
+    int matriz[];
     boolean b;
-    int mille;
+    real numero;
     string cidade;
+    funcionario joao;
 }
 
 functions{
-    function real calcula_extra(real salario){
-        var{
-            int a[][], b, f;
-            pessoa p, felipe;
-            string teste;
-            empresa e;
-        }
 
-        local.p.idade = calcula_extra2(local.e.nome, 12.5, 32);
-        
-        return global.base_calculo;
+    function int calcular (int num1, int num2){
+        var{
+            int a;
+        }
+        return local.a;
     }
-    function int calcula_extra2(int salario, real codigo, int salario){
+
+    function real calculo (real num1){
         var{
             real a;
         }
-        return local.salario;
-    }
+        return local.a * local.num1;
+    }    
+
 }
 
 procedures{
@@ -62,15 +55,28 @@ procedures{
             int cep, alfa;
         }
     }
+
+    procedure start(){
+        var{
+            int numero;
+            p pessoa;
+            boolean codigo;
+            real r;
+            int valor;
+            int retorno;
+        }
+        local.numero = calculo (10.4,32.2); // erro de parametro quantidade e tipo (string cidade, real cep, string cidade)
+        //Calculo retorna real e número é um inteiro
+        calculo ("rwrw");
+        global.numero = 0.3 + "teste"; // global.numero é real, aceita soma qualquer coisa
+        a = 4 + s;
+        global.joao.endereco = 10.5; // não existe o atributo endereco
+        global.joao.idade = "teste"; //idade é int e não string
+        local.cidade = 10.5; //cidade é uma variável global do tipo string
+        global.valor = "teste"; //valor é local e inteiro
+        global.valor = 10; //valor é local e inteiro
+
+        return local.retorno
+    }    
 }
 
-start(){
-    var{
-        int numero;
-        p pessoa;
-        boolean codigo;
-        real r;
-    }
-    calcula_extra(local.r);
-    local.numero++;
-}

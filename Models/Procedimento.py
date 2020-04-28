@@ -20,4 +20,13 @@ class Procedimento():
             if (parametro.tipo != params[i].tipo):
                 return False
         return True
+    
+    def exists_variavel(self, variavel):
+        for parametro in self.parametros:
+            if variavel == parametro.nome:
+                return parametro
+        for variavel_funcao in self.variaveis:
+            if variavel == variavel_funcao.nome:
+                return variavel_funcao
+        return False
         

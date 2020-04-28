@@ -14,6 +14,7 @@ from Models.Erro import Erro
 class AnaSem():
     funcoes = []
     corpo_funcoes = []
+    corpo_procedimentos = []
     procedimentos = []
     constantes = []
     variaveis = []
@@ -34,14 +35,13 @@ class AnaSem():
             self.preencher_variaveis_globais(groups[3])
             self.preencher_funcoes(groups[4])
             self.preencher_procedimentos(groups[5])
-            self.preencher_start(groups[6])
-            for i, corpo_funcao in enumerate(self.corpo_funcoes):
+            for i, corpo_funcao in enumerate(self.corpo_funcoes):             
                 self.verificar_chamada_funcoes(corpo_funcao, self.funcoes[i])
-                self.verificar_tipo_atribuicoes(corpo_funcao, self.funcoes[i])            
+                self.verificar_tipo_atribuicoes(corpo_funcao, self.funcoes[i])
+            for i, corpo_procedimento in enumerate(self.corpo_procedimentos):             
+                self.verificar_chamada_funcoes(corpo_procedimento, self.procedimentos[i])
+                self.verificar_tipo_atribuicoes(corpo_procedimento, self.procedimentos[i])            
             self.verificar_retorno_funcoes()
-            #Verificacao de erros
-            #1-Unicidade
-            #self.verificar_unicidade()
             conteudo = ''
             if (self.erros):
                 conteudo += '\n\n\nErros: \n\n'
@@ -137,6 +137,7 @@ class AnaSem():
             content_var = self.find_bracket_groups(content_procedure)[0]
             variaveis = self.get_variaveis(content_var)
             self.procedimentos.append(Procedimento(group[indice+1].lexema, params, variaveis, group[indice+1].linha))
+            self.corpo_procedimentos.append(content_procedure)
 
     def preencher_start(self, group):
         return
@@ -238,20 +239,20 @@ class AnaSem():
                         variavel = self.verificar_existencia_variaveis(content[i+2].lexema)
                     if (not variavel):
                         self.erros.append(Erro('Variavel não declarada', content[i+2].lexema, content[i+2].linha))
-                        continue                        
+                        continue    
                     if content[i+3].lexema == '.':
-                        atributo_struct = content[i+4]
-                        struct_name = variavel.tipo
-                        estrutura_indice = [i for i, e in enumerate(self.estruturas) if e.nome == struct_name]
-                        if (estrutura_indice):
-                            estrutura = self.estruturas[estrutura_indice[0]]
-                            atributo = estrutura.get_attribute(atributo_struct.lexema)
-                            if(atributo):
-                                parametros.append(Variavel(atributo.tipo, atributo.nome, atributo_struct.linha))
+                            atributo_struct = content[i+4]
+                            struct_name = variavel.tipo
+                            estrutura_indice = [i for i, e in enumerate(self.estruturas) if e.nome == struct_name]
+                            if (estrutura_indice):
+                                estrutura = self.estruturas[estrutura_indice[0]]
+                                atributo = estrutura.get_attribute(atributo_struct.lexema)
+                                if(atributo):
+                                    parametros.append(Variavel(atributo.tipo, atributo.nome, atributo_struct.linha))
+                                else:
+                                    self.erros.append(Erro('Atributo da estrutura inválido ou não declarado', atributo_struct.lexema, atributo_struct.linha))
                             else:
-                                self.erros.append(Erro('Atributo da estrutura inválido ou não declarado', atributo_struct.lexema, atributo_struct.linha))
-                        else:
-                            self.erros.append(Erro('Tipo de estrutura inválido ou não declarado', variavel.lexema, variavel.linha))
+                                self.erros.append(Erro('Tipo de estrutura inválido ou não declarado', variavel.lexema, variavel.linha))
                     else:
                         parametros.append(variavel)
                 elif elemento.token == 'Cadeia de caractere':
@@ -277,9 +278,9 @@ class AnaSem():
         return parametros
 
     def verificar_tipo_atribuicoes(self, group, funcao):
-        indices_igual = [i for i, e in enumerate(group) if e.lexema == '=']
+        indices_igual = [i for i, e in enumerate(group) if e.lexema == '=']        
         
-        for i ,indice in enumerate(indices_igual):
+        for i ,indice in enumerate(indices_igual):            
             if (group[indice-4].lexema != '.'):                
                 escopo = group[indice-3].lexema
                 variavel_aux = group[indice-1]
@@ -317,8 +318,12 @@ class AnaSem():
                         self.erros.append(Erro('Tipo de estrutura inválido ou não declarado', variavel_aux.lexema, variavel_aux.linha))
 
 
-            tipo_variavel2 = None
-            if (group[indice+1].lexema == 'local' or group[indice+1].lexema == 'global'):              
+            tipo_variavel2 = self.get_atribuivel(group, indice, funcao)
+            if (tipo_variavel and tipo_variavel2 and (tipo_variavel != tipo_variavel2)):
+                    erro = Erro('Atribuição de tipo diferente', variavel.nome, variavel.linha)
+                    self.erros.append(erro)
+                    continue
+            if (group[indice+1].lexema == 'local' or group[indice+1].lexema == 'global' and not tipo_variavel2):              
                 if group[indice+1].lexema == 'local':
                     variavel2_aux = group[indice+3]
                     variavel2 = funcao.exists_variavel(variavel2_aux.lexema)
@@ -445,6 +450,80 @@ class AnaSem():
             if funcao.tipo != retorno.tipo:
                     erro = Erro('Tipo de retorno invalido', funcao.nome, funcao.linha)
                     self.erros.append(erro)
+
+    def get_atribuivel(self, group, indice, funcao):
+        group = group[indice+1:]
+        auxGroup = []
+        for element in group:
+            if element.lexema == ';':
+                break
+            else:
+                auxGroup.append(element)
+        
+        return self.verificar_expressoes(auxGroup, funcao)
+
+    
+    def verificar_expressoes(self, exp, funcao):
+        auxElement = []
+        delimitadores = ['+', '-', '*', '/', '(', ')']
+        for elemento in exp:
+            if (not elemento.lexema in delimitadores):
+                auxElement.append(elemento)
+        
+        # for a in auxElement:
+        #     print(a)
+
+        tiposElementos = []
+        for i, aux in enumerate(auxElement):
+            
+            if (aux.lexema == 'local' or aux.lexema == 'global'):
+                if aux.lexema == 'local':
+                    variavel2_aux = auxElement[i+2]
+                    variavel2 = funcao.exists_variavel(variavel2_aux.lexema)
+                elif aux.lexema == 'global':
+                    variavel2_aux = auxElement[i+2]
+                    variavel2 = self.verificar_existencia_variaveis(variavel2_aux.lexema)
+                if (not variavel2):
+                    self.erros.append(Erro('Variavel não declarada', variavel2_aux.lexema, variavel2_aux.linha))
+                    continue                
+                if auxElement[i+3].lexema == '.':
+                    atributo_struct2 = auxElement[i+4]                 
+                    struct_name2 = variavel2.tipo
+                    estrutura_indice2 = [i for i, e in enumerate(self.estruturas) if e.nome == struct_name2]
+                    if (estrutura_indice2):
+                        estrutura2 = self.estruturas[estrutura_indice2[0]]
+                        atributo2 = estrutura2.get_attribute(atributo_struct2.lexema)
+                        if(atributo2):
+                            tipo_variavel2 = atributo2.tipo
+                            tiposElementos.append(tipo_variavel2)
+                        else:
+                            self.erros.append(Erro('Atributo da estrutura inválido ou não declarado', atributo_struct2.lexema, atributo_struct2.linha))
+                    else:
+                        self.erros.append(Erro('Tipo de estrutura inválido ou não declarado', variavel2_aux.lexema, variavel2_aux.linha))                
+                else:
+                    tipo_variavel2 = variavel2.tipo
+                    tiposElementos.append(tipo_variavel2)         
+            elif aux.token == 'Cadeia de caractere':
+                tiposElementos.append('string')
+            elif aux.token == 'Numero':
+                try:
+                    if content[i-1].lexema != '[' and content[i+1] != ']':
+                        if '.' in aux.lexema:
+                            tiposElementos.append('real')
+                        else:
+                            tiposElementos.append('int')
+                except:
+                    if '.' in aux.lexema:
+                        tiposElementos.append('real')
+                    else:
+                        tiposElementos.append('int')
+        
+        if(all(x == tiposElementos[0] for x in tiposElementos)):
+            return tiposElementos[0]
+        else:
+            self.erros.append(Erro('Expressão entre tipos diferentes', 'Exp Aritimetica', auxElement[0].linha))
+
+        return False
 
 analisador_semantico = AnaSem()
 analisador_semantico.analisa()
